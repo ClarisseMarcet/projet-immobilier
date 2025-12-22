@@ -9,13 +9,15 @@ pio.templates.default = "plotly_white"
 st.set_page_config(page_title="Analyse immobilière", layout="wide")
 
 
+# ---------------------------
 # FONCTIONS MAPPING ZONES
-
+# ---------------------------
 
 def map_region(dep: str) -> str:
     if dep is None:
         return "Région inconnue"
     d = str(dep).strip()
+
     if d in ("2A", "2B"):
         return "Corse"
     if d in ("75", "77", "78", "91", "92", "93", "94", "95"):
@@ -34,14 +36,11 @@ def map_region(dep: str) -> str:
         return "Bretagne"
     if d in ("44", "49", "53", "72", "85"):
         return "Pays de la Loire"
-    if d in ("16", "17", "19", "23", "24", "33", "40",
-             "47", "64", "79", "86", "87"):
+    if d in ("16", "17", "19", "23", "24", "33", "40", "47", "64", "79", "86", "87"):
         return "Nouvelle-Aquitaine"
-    if d in ("03", "15", "43", "63", "07", "26", "38", "42",
-             "69", "73", "74", "01"):
+    if d in ("03", "15", "43", "63", "07", "26", "38", "42", "69", "73", "74", "01"):
         return "Auvergne-Rhône-Alpes"
-    if d in ("09", "11", "12", "30", "31", "32", "34",
-             "46", "48", "65", "66", "81", "82"):
+    if d in ("09", "11", "12", "30", "31", "32", "34", "46", "48", "65", "66", "81", "82"):
         return "Occitanie"
     if d in ("04", "05", "06", "13", "83", "84"):
         return "Provence-Alpes-Côte d’Azur"
@@ -49,7 +48,6 @@ def map_region(dep: str) -> str:
 
 
 def map_zone_macro(region: str) -> str:
-    # 5 grandes zones (A)
     if region in ("Hauts-de-France", "Normandie"):
         return "Nord"
     if region == "Grand Est":
@@ -62,10 +60,10 @@ def map_zone_macro(region: str) -> str:
 
 
 def map_zone_fiscale(dep: str) -> str:
-    # Approximation zones fiscales (C) A / B1 / B2 / C
     if dep is None:
         return "Zone C"
     d = str(dep).strip()
+
     zone_A = {"75", "92", "93", "94"}
     zone_B1 = {
         "77", "78", "91", "95", "13", "06", "69", "31", "33", "59", "67", "44",
@@ -78,6 +76,7 @@ def map_zone_fiscale(dep: str) -> str:
         "64", "65", "66", "68", "70", "71", "72", "73", "74", "76", "79", "80",
         "81", "82", "83", "84", "85", "86", "87", "88", "89", "90"
     }
+
     if d in zone_A:
         return "Zone A"
     if d in zone_B1:
@@ -88,15 +87,15 @@ def map_zone_fiscale(dep: str) -> str:
 
 
 def pick_count_col(df: pd.DataFrame) -> str:
-    # colonne utilisée pour compter les transactions
     for c in ["valeur_fonciere", "id_mutation", "nb_transactions", "prix_m2"]:
         if c in df.columns:
             return c
     return df.columns[0]
 
 
-
+# ---------------------------
 # CHARGEMENT DES DONNÉES
+# ---------------------------
 
 @st.cache_data
 def load_data():
@@ -113,27 +112,46 @@ def load_data():
         low_memory=False
     )
 
-    return df
-
-
+    # --- Normalisation codes
     if "code_departement" in df.columns:
-        df["code_departement"] = df["code_departement"].astype(str).str.zfill(2)
+        df["code_departement"] = (
+            df["code_departement"]
+            .astype(str)
+            .str.strip()
+            .str.upper()
+        )
+        # zfill pour les codes numériques (01, 02, ...)
+        df["code_departement"] = df["code_departement"].apply(
+            lambda x: x.zfill(2) if x.isdigit() else x
+        )
 
     if "code_commune" in df.columns:
         df["code_commune"] = df["code_commune"].astype(str).str.zfill(5)
 
+    # --- Si prix_m2 absent, on essaie de le calculer
+    if "prix_m2" not in df.columns:
+        if {"valeur_fonciere", "surface_reelle_bati"}.issubset(df.columns):
+            surf = pd.to_numeric(df["surface_reelle_bati"], errors="coerce")
+            val = pd.to_numeric(df["valeur_fonciere"], errors="coerce")
+            df["prix_m2"] = np.where((surf > 0) & (val > 0), val / surf, np.nan)
+
+    # --- Nettoyage prix_m2 (si dispo)
+    if "prix_m2" in df.columns:
+        df["prix_m2"] = pd.to_numeric(df["prix_m2"], errors="coerce")
+        df = df[df["prix_m2"].between(50, 30000, inclusive="both")]
+
+    # --- Eviter KeyError nom_departement
+    if "nom_departement" not in df.columns:
+        if "code_departement" in df.columns:
+            df["nom_departement"] = df["code_departement"]
+        else:
+            df["nom_departement"] = "N/A"
+
+    # --- Zone (si absente)
     if "zone" not in df.columns:
         df["zone"] = "Autres"
 
-    # évite KeyError
-    if "nom_departement" not in df.columns:
-        df["nom_departement"] = df["code_departement"] if "code_departement" in df.columns else "N/A"
-
-    # nettoyage prix_m2
-    if "prix_m2" in df.columns:
-        df = df[df["prix_m2"].between(50, 30000)]
-
-    # ===== Régions + zones A / C =====
+    # --- Régions + zones A / C
     if "code_departement" in df.columns:
         df["region"] = df["code_departement"].apply(map_region)
         df["zone_macro"] = df["region"].apply(map_zone_macro)
@@ -143,7 +161,7 @@ def load_data():
         df["zone_macro"] = "Centre"
         df["zone_fiscale"] = "Zone C"
 
-    # Paris / Banlieue (pour bouton dédié)
+    # --- Paris / Banlieue IDF
     df["zone_paris"] = "Autre"
     if "code_departement" in df.columns:
         df.loc[df["code_departement"] == "75", "zone_paris"] = "Paris"
@@ -152,11 +170,11 @@ def load_data():
     return df
 
 
-
+# ---------------------------
 # APP
+# ---------------------------
 
 def main():
-    # Style 
     st.markdown("""
     <style>
         .stTabs [role="tablist"] {
@@ -183,27 +201,28 @@ def main():
     df = load_data()
     count_col = pick_count_col(df)
 
-    #
-    # FILTRES GLOBAUX (COMPACT)
-    
     st.sidebar.header("Filtres principaux")
 
     if "annee" in df.columns:
         annees = sorted(df["annee"].dropna().unique())
         annees_options = ["Toutes"] + [str(int(a)) for a in annees]
-        annee_sel = st.sidebar.selectbox("Année", annees_options, index=len(annees_options) - 1 if len(annees_options) > 1 else 0)
+        annee_sel = st.sidebar.selectbox(
+            "Année",
+            annees_options,
+            index=len(annees_options) - 1 if len(annees_options) > 1 else 0
+        )
     else:
         annee_sel = "Toutes"
 
     st.sidebar.markdown("---")
 
-    
+    # IMPORTANT: widgets bien en sidebar
     with st.sidebar.expander("Filtres zones (A / C)", expanded=False):
         zm_options = ["Toutes"] + sorted(df["zone_macro"].dropna().unique()) if "zone_macro" in df.columns else ["Toutes"]
-        zone_macro_sel = st.selectbox("Zone macro (Nord / Sud / Est / Ouest / Centre)", zm_options)
+        zone_macro_sel = st.sidebar.selectbox("Zone macro (Nord / Sud / Est / Ouest / Centre)", zm_options)
 
         zf_options = ["Toutes"] + sorted(df["zone_fiscale"].dropna().unique()) if "zone_fiscale" in df.columns else ["Toutes"]
-        zone_fiscale_sel = st.selectbox("Zone fiscale (A / B1 / B2 / C)", zf_options)
+        zone_fiscale_sel = st.sidebar.selectbox("Zone fiscale (A / B1 / B2 / C)", zf_options)
 
     st.sidebar.markdown("---")
 
@@ -227,7 +246,6 @@ def main():
     else:
         min_p, max_p = 0.0, 10000.0
 
-    #  sécurité slider
     if int(min_p) >= int(max_p):
         st.sidebar.warning("Plage de prix insuffisante pour ce filtre.")
         prix_min, prix_max = int(min_p), int(max_p)
@@ -239,7 +257,9 @@ def main():
             value=(int(min_p), int(min_p + (max_p - min_p) * 0.7))
         )
 
+    # ---------------------------
     # APPLICATION DES FILTRES
+    # ---------------------------
     dff = df.copy()
 
     if annee_sel != "Toutes" and "annee" in dff.columns:
@@ -270,8 +290,6 @@ def main():
         st.warning("Aucune donnée immobilière pour ces filtres.")
         return
 
-    # ONGLET PRINCIPAL / TABS
-    
     tab1, tab2, tab3, tab4, tab5 = st.tabs([
         "Vue générale",
         "Comparaisons départements",
@@ -280,11 +298,11 @@ def main():
         "Prévisions & tendances"
     ])
 
-    
+    # ---------------------------
     # TAB 1 – VUE GÉNÉRALE
-    
+    # ---------------------------
     with tab1:
-        st.subheader(" Indicateurs clés")
+        st.subheader("Indicateurs clés")
 
         k1, k2, k3, k4 = st.columns(4)
 
@@ -292,22 +310,23 @@ def main():
         prix_med = dff["prix_m2"].median() if "prix_m2" in dff.columns else None
 
         if "nb_transactions" in dff.columns:
-            nb_trans = int(dff["nb_transactions"].sum())
+            nb_trans = int(pd.to_numeric(dff["nb_transactions"], errors="coerce").fillna(0).sum())
         else:
             nb_trans = len(dff)
 
         val_moy = dff["valeur_fonciere"].mean() if "valeur_fonciere" in dff.columns else None
 
-        # delta vs année précédente (sans zone_marche)
         delta_txt = None
         if (
             prix_moy is not None
             and annee_sel != "Toutes"
             and "annee" in df.columns
             and "prix_m2" in df.columns
+            and annee_int is not None
         ):
             prev_year = annee_int - 1
             df_prev = df.copy()
+
             if zone_macro_sel != "Toutes" and "zone_macro" in df_prev.columns:
                 df_prev = df_prev[df_prev["zone_macro"] == zone_macro_sel]
             if zone_fiscale_sel != "Toutes" and "zone_fiscale" in df_prev.columns:
@@ -320,6 +339,7 @@ def main():
                 df_prev = df_prev[df_prev["type_local"] == type_sel]
             if "prix_m2" in df_prev.columns:
                 df_prev = df_prev[(df_prev["prix_m2"] >= prix_min) & (df_prev["prix_m2"] <= prix_max)]
+
             df_prev = df_prev[df_prev["annee"] == prev_year] if "annee" in df_prev.columns else df_prev
 
             if not df_prev.empty and "prix_m2" in df_prev.columns:
@@ -338,11 +358,12 @@ def main():
         c1, c2 = st.columns([1.7, 1])
 
         with c1:
-            st.subheader(" Prix au m² par département")
+            st.subheader("Prix au m² par département")
 
             geo_url = "https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/departements.geojson"
 
-            if "code_departement" in dff.columns and "nom_departement" in dff.columns and "prix_m2" in dff.columns:
+            needed = {"code_departement", "nom_departement", "prix_m2"}
+            if needed.issubset(dff.columns) and not dff["prix_m2"].dropna().empty:
                 df_dep = (
                     dff.groupby(["code_departement", "nom_departement"], as_index=False)
                     .agg(
@@ -351,22 +372,28 @@ def main():
                     )
                 )
 
-                fig_map = px.choropleth(
-                    df_dep,
-                    geojson=geo_url,
-                    locations="code_departement",
-                    featureidkey="properties.code",
-                    color="prix_m2",
-                    color_continuous_scale="Blues",
-                    hover_name="nom_departement",
-                    hover_data={"prix_m2": True, "nb": True, "code_departement": False},
-                    labels={"prix_m2": "Prix moyen au m²", "nb": "Nb transactions"}
-                )
-                fig_map.update_geos(fitbounds="locations", visible=False)
-                fig_map.update_layout(margin=dict(l=0, r=0, t=0, b=0))
-                st.plotly_chart(fig_map, use_container_width=True)
+                # petite sécurité: il faut des codes non vides
+                df_dep = df_dep[df_dep["code_departement"].notna() & (df_dep["code_departement"].astype(str).str.len() > 0)]
+
+                if df_dep.empty:
+                    st.info("Pas assez de données agrégées pour construire la carte.")
+                else:
+                    fig_map = px.choropleth(
+                        df_dep,
+                        geojson=geo_url,
+                        locations="code_departement",
+                        featureidkey="properties.code",
+                        color="prix_m2",
+                        color_continuous_scale="Blues",
+                        hover_name="nom_departement",
+                        hover_data={"prix_m2": True, "nb": True, "code_departement": False},
+                        labels={"prix_m2": "Prix moyen au m²", "nb": "Nb transactions"}
+                    )
+                    fig_map.update_geos(fitbounds="locations", visible=False)
+                    fig_map.update_layout(margin=dict(l=0, r=0, t=0, b=0))
+                    st.plotly_chart(fig_map, use_container_width=True)
             else:
-                st.info("Colonnes insuffisantes pour afficher la carte (code_departement / prix_m2).")
+                st.info("Colonnes insuffisantes pour afficher la carte (code_departement / nom_departement / prix_m2).")
 
         with c2:
             st.subheader("Distribution des prix au m²")
@@ -408,7 +435,6 @@ def main():
             if "prix_m2" in df_e.columns:
                 df_e = df_e[(df_e["prix_m2"] >= prix_min) & (df_e["prix_m2"] <= prix_max)]
 
-                # (robustesse + nb + moyenne mobile centrée 3 ans)
                 if "annee" in df_e.columns:
                     df_e = (
                         df_e.groupby("annee", as_index=False)
@@ -429,7 +455,6 @@ def main():
                         evol_fig.update_layout(legend_title_text="")
                         st.plotly_chart(evol_fig, use_container_width=True)
 
-                        # AMÉLIORATION 2
                         st.caption(
                             f"Évolution calculée uniquement pour les années ayant au moins 30 transactions. "
                             f"Total utilisé : {int(df_e['nb'].sum()):,}".replace(",", " ")
@@ -442,10 +467,12 @@ def main():
                 st.info("Variable prix_m2 indisponible pour l'évolution.")
 
         with c4:
-            st.subheader(" Prix au m² vs surface")
+            st.subheader("Prix au m² vs surface")
 
             if "surface_reelle_bati" in dff.columns and "prix_m2" in dff.columns:
                 scat_df = dff.dropna(subset=["surface_reelle_bati", "prix_m2"]).copy()
+                scat_df["surface_reelle_bati"] = pd.to_numeric(scat_df["surface_reelle_bati"], errors="coerce")
+                scat_df = scat_df.dropna(subset=["surface_reelle_bati", "prix_m2"])
                 if not scat_df.empty:
                     if len(scat_df) > 5000:
                         scat_df = scat_df.sample(5000, random_state=42)
@@ -467,11 +494,11 @@ def main():
             else:
                 st.info("Variables surface ou prix manquantes pour le scatter.")
 
-
+    # ---------------------------
     # TAB 2 – COMPARAISONS DÉPARTEMENTS
-    
+    # ---------------------------
     with tab2:
-        st.subheader(" Comparaison inter-départements")
+        st.subheader("Comparaison inter-départements")
 
         df_comp = df.copy()
         if annee_sel != "Toutes" and "annee" in df_comp.columns:
@@ -563,7 +590,7 @@ def main():
                     st.info("Nombre de départements insuffisant pour comparaison A/B.")
 
         st.markdown("---")
-        st.subheader(" Paris vs Banlieue IDF (bouton dédié)")
+        st.subheader("Paris vs Banlieue IDF (bouton dédié)")
 
         df_pb = df_comp.copy()
         df_paris = df_pb[df_pb["zone_paris"] == "Paris"] if "zone_paris" in df_pb.columns else df_pb.iloc[0:0]
@@ -585,20 +612,23 @@ def main():
                 else:
                     st.write("Pas de données pour la banlieue avec ces filtres.")
 
-            if not df_paris.empty and not df_banl.empty and "prix_m2" in df_paris.columns and "prix_m2" in df_banl.columns:
+            if (
+                not df_paris.empty and not df_banl.empty
+                and "prix_m2" in df_paris.columns and "prix_m2" in df_banl.columns
+            ):
                 comp = pd.DataFrame({
                     "Zone": ["Paris", "Banlieue IDF"],
                     "Prix moyen": [df_paris["prix_m2"].mean(), df_banl["prix_m2"].mean()]
                 })
                 figpb = px.bar(comp, x="Zone", y="Prix moyen", text="Prix moyen")
-                figpb.update_traces(texttemplate='%{text:,.0f} €', textposition="outside")
+                figpb.update_traces(texttemplate="%{text:,.0f} €", textposition="outside")
                 st.plotly_chart(figpb, use_container_width=True)
 
-
+    # ---------------------------
     # TAB 3 – TYPOLOGIE DES BIENS
-    
+    # ---------------------------
     with tab3:
-        st.subheader(" Répartition par type de bien")
+        st.subheader("Répartition par type de bien")
 
         if "type_local" in dff.columns and "prix_m2" in dff.columns:
             agg_type = (
@@ -650,11 +680,11 @@ def main():
         else:
             st.info("Variables 'type_local' ou 'prix_m2' manquantes pour cette analyse.")
 
-    
+    # ---------------------------
     # TAB 4 – TABLEAUX & DONNÉES
-    
+    # ---------------------------
     with tab4:
-        st.subheader(" Classement des communes selon le prix au m²")
+        st.subheader("Classement des communes selon le prix au m²")
 
         if "commune" not in dff.columns or "prix_m2" not in dff.columns:
             st.info("La colonne 'commune' ou 'prix_m2' n'est pas disponible dans la base.")
@@ -682,21 +712,22 @@ def main():
                 st.dataframe(bottom20.reset_index(drop=True))
 
         st.markdown("---")
-        st.subheader(" Aperçu des données filtrées")
+        st.subheader("Aperçu des données filtrées")
         st.dataframe(dff.head(300))
 
         csv = dff.to_csv(index=False).encode("utf-8")
         st.download_button(
-            label=" Télécharger les données filtrées (CSV)",
+            label="Télécharger les données filtrées (CSV)",
             data=csv,
             file_name="donnees_filtrees_immobilier.csv",
             mime="text/csv"
         )
 
+    # ---------------------------
     # TAB 5 – PRÉVISIONS & TENDANCES
-    
+    # ---------------------------
     with tab5:
-        st.subheader(" Prévisions simples & tendances (prix moyen au m²)")
+        st.subheader("Prévisions simples & tendances (prix moyen au m²)")
 
         df_fore = df.copy()
         if zone_macro_sel != "Toutes" and "zone_macro" in df_fore.columns:
@@ -722,10 +753,8 @@ def main():
             .sort_values("annee")
         )
 
-        # robustesse
         ts = ts[ts["nb"] >= 30].copy()
 
-        #  AMÉLIORATION 1 : avertissement si fragile
         if not ts.empty and ts["nb"].min() < 50:
             st.info(
                 "Attention : certaines années reposent sur un nombre limité de transactions. "
@@ -761,7 +790,7 @@ def main():
             )
             st.plotly_chart(fig_fore, use_container_width=True)
 
-            st.markdown("####  Prévisions (3 prochaines années)")
+            st.markdown("#### Prévisions (3 prochaines années)")
             prev_table = df_fut.copy()
             prev_table["prix_m2"] = prev_table["prix_m2"].round(0)
             prev_table = prev_table.rename(columns={"annee": "Année", "prix_m2": "Prix prévisionnel au m²"})
@@ -831,7 +860,7 @@ def main():
                 st.plotly_chart(fig_type_ts, use_container_width=True)
 
         st.markdown("---")
-        st.subheader(" Synthèse automatique (lecture Data Scientist)")
+        st.subheader("Synthèse automatique (lecture Data Scientist)")
 
         try:
             prix_global = df["prix_m2"].mean() if "prix_m2" in df.columns else np.nan
