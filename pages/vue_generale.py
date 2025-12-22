@@ -37,6 +37,7 @@ st.markdown("""
     border-color: #7cb342;
 }
 
+
 .card-title {
     font-size: 1.2rem;
     font-weight: 700;
