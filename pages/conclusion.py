@@ -13,10 +13,10 @@ st.markdown("""
 <style>
 .section-card {
     background-color: #ffffff;
-    border-radius: 16px;
-    padding: 26px 30px;
+    border-radius: 1px;
+    padding: 2px 3px;
     margin-top: 22px;
-    margin-bottom: 28px;
+    margin-bottom: 2px;
     box-shadow: 0 6px 18px rgba(0,0,0,0.06);
 }
 
