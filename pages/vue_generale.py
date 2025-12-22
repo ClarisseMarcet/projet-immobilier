@@ -1,204 +1,181 @@
 import streamlit as st
-import pandas as pd
-from pathlib import Path
 
-st.set_page_config(page_title="Introduction", layout="wide")
+st.set_page_config(
+    page_title="Immobilier & Climat – Vue d’ensemble",
+    layout="wide"
+)
 
 # =========================
-# STYLE SIMPLE & AÉRÉ
+# STYLE (noir / jaune, lisible)
 # =========================
+
 st.markdown("""
 <style>
 body {
     color: #000000;
 }
 
-.intro-container {
+.main-container {
     max-width: 1100px;
     margin: auto;
 }
 
-.section-title {
-    font-size: 1.7rem;
+.title {
+    font-size: 2.1rem;
     font-weight: 800;
-    margin-top: 34px;
-    margin-bottom: 16px;
-    color: #000000;
+    margin-bottom: 10px;
 }
 
-.section-text {
+.subtitle {
     font-size: 1.05rem;
-    line-height: 1.75;
-    color: #000000;
+    margin-bottom: 26px;
+    line-height: 1.6;
+}
+
+.section-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    margin-top: 34px;
+    margin-bottom: 14px;
+}
+
+.hr {
+    border-top: 2px solid #000000;
+    margin: 30px 0;
+}
+
+.list-item {
+    margin-bottom: 8px;
+    font-size: 1.05rem;
 }
 
 .grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 30px;
-    margin-top: 24px;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+    margin-top: 18px;
 }
 
 .box {
-    padding: 20px 24px;
-    border: 2px solid #f1c40f; /* jaune */
-    background-color: transparent;
+    border: 2px solid #f1c40f;
+    padding: 18px 22px;
 }
 
 .box-title {
     font-weight: 800;
     margin-bottom: 10px;
-    color: #000000;
+}
+
+.highlight-box {
+    border: 2px solid #f1c40f;
+    padding: 18px 22px;
+    margin-top: 18px;
 }
 
 .steps {
-    margin-top: 12px;
+    margin-top: 10px;
 }
 
 .step {
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     font-weight: 600;
-    color: #000000;
-}
-
-/* Ligne de séparation */
-hr {
-    border: none;
-    border-top: 2px solid #000000;
-    margin: 32px 0;
 }
 </style>
 """, unsafe_allow_html=True)
 
+# =========================
+# CONTENU
+# =========================
+
+st.markdown("<div class='main-container'>", unsafe_allow_html=True)
+
+st.markdown("<div class='title'>Immobilier & Climat : Vue d’ensemble</div>", unsafe_allow_html=True)
+
+st.markdown(
+    "<div class='subtitle'>"
+    "Ce tableau de bord analyse les interactions entre le marché immobilier et les facteurs climatiques "
+    "pour mieux comprendre les enjeux et les impacts à long terme."
+    "</div>",
+    unsafe_allow_html=True
+)
+
+st.markdown("<div class='hr'></div>", unsafe_allow_html=True)
 
 # =========================
-# CHARGEMENT DES DONNÉES (pour chiffres clés)
+# À quoi sert le dashboard
 # =========================
-@st.cache_data
-def load_data():
-    path = Path("data/base_finale_dashboard.csv")
-    df = pd.read_csv(path, low_memory=False)
 
-    if "prix_m2" not in df.columns:
-        df["prix_m2"] = pd.NA
-    if "risque_climatique" not in df.columns:
-        df["risque_climatique"] = pd.NA
+st.markdown("<div class='section-title'>À quoi sert ce tableau de bord ?</div>", unsafe_allow_html=True)
 
-    return df
+st.markdown("""
+<div class='list-item'>• Comprendre les tendances du marché immobilier</div>
+<div class='list-item'>• Évaluer les risques climatiques</div>
+<div class='list-item'>• Identifier les zones à enjeux ou à opportunités</div>
+<div class='list-item'>• Aider à la prise de décision (investissement, aménagement, prévention)</div>
+""", unsafe_allow_html=True)
 
+# =========================
+# Deux blocs Analyse
+# =========================
 
-def main():
-    df = load_data()
+st.markdown("<div class='grid'>", unsafe_allow_html=True)
 
-    prix_moy_nat = df["prix_m2"].mean()
-    risque_moy_nat = df["risque_climatique"].mean()
-    nb_departements = df["code_departement"].nunique() if "code_departement" in df.columns else None
+st.markdown("""
+<div class='box'>
+    <div class='box-title'>Analyse climatique</div>
+    Étudiez les indicateurs climatiques :
+    <ul>
+        <li>Températures</li>
+        <li>Précipitations</li>
+        <li>Événements extrêmes</li>
+        <li>Niveaux de risque</li>
+    </ul>
+</div>
+""", unsafe_allow_html=True)
 
-    st.title("Immobilier & Climat : vue d’ensemble")
+st.markdown("""
+<div class='box'>
+    <div class='box-title'>Analyse immobilière</div>
+    Explorez les données immobilières :
+    <ul>
+        <li>Prix au m²</li>
+        <li>Transactions</li>
+        <li>Types de biens</li>
+        <li>Évolution du marché</li>
+    </ul>
+</div>
+""", unsafe_allow_html=True)
 
-    st.markdown("<div class='intro-container'>", unsafe_allow_html=True)
+st.markdown("</div>", unsafe_allow_html=True)
 
-    # =========================
-    # TEXTE INTRODUCTIF
-    # =========================
-    st.markdown("""
-    <div class="section-text">
-    Ce tableau de bord analyse les interactions entre le <b>marché immobilier</b> et les
-    <b>facteurs climatiques</b> afin de mieux comprendre les enjeux territoriaux actuels.
+# =========================
+# Pourquoi croiser climat / immobilier
+# =========================
 
-    L’objectif est d’apporter une lecture claire et structurée des disparités géographiques,
-    en mettant en regard l’accessibilité du marché immobilier et l’exposition aux risques
-    climatiques.
-    </div>
-    """, unsafe_allow_html=True)
+st.markdown("<div class='section-title'>Pourquoi croiser climat et immobilier ?</div>", unsafe_allow_html=True)
 
-    st.markdown("---")
+st.markdown("""
+<div class='highlight-box'>
+Les conditions climatiques impactent la valeur des biens et l’attractivité des territoires.
+<br><br>
+Une analyse croisée permet d’anticiper les évolutions à venir et de mieux comprendre
+les dynamiques territoriales.
+</div>
+""", unsafe_allow_html=True)
 
-    # =========================
-    # À QUOI SERT CE TABLEAU DE BORD ?
-    # =========================
-    st.markdown("<div class='section-title'>À quoi sert ce tableau de bord ?</div>", unsafe_allow_html=True)
+# =========================
+# Comment utiliser le dashboard
+# =========================
 
-    st.markdown("""
-    <div class="section-text">
-    ▸ Comprendre les tendances du marché immobilier<br>
-    ▸ Analyser les indicateurs climatiques<br>
-    ▸ Identifier les zones à risques ou à opportunités<br>
-    ▸ Aider à la prise de décision en matière d’investissement, d’aménagement et de prévention
-    </div>
-    """, unsafe_allow_html=True)
+st.markdown("<div class='section-title'>Comment utiliser le tableau de bord ?</div>", unsafe_allow_html=True)
 
-    # =========================
-    # IMMOBILIER / CLIMAT (2 BLOCS)
-    # =========================
-    st.markdown("<div class='grid'>", unsafe_allow_html=True)
+st.markdown("""
+<div class='steps'>
+    <div class='step'>1. Commencez par la vue d’ensemble</div>
+    <div class='step'>2. Consultez la page climatique</div>
+    <div class='step'>3. Explorez la page immobilière</div>
+    <div class='step'>4. Croisez les informations pour interpréter les résultats</div>
+</div>
+""", unsafe_allow_html=True)
 
-    st.markdown("""
-    <div class="box">
-        <div class="box-title">Analyse climatique</div>
-        ▸ Températures et aléas climatiques<br>
-        ▸ Sécheresse, inondations, feux<br>
-        ▸ Population exposée<br>
-        ▸ Pressions environnementales sur les territoires
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class="box">
-        <div class="box-title">Analyse immobilière</div>
-        ▸ Prix au mètre carré<br>
-        ▸ Types de biens et transactions<br>
-        ▸ Évolution temporelle du marché<br>
-        ▸ Accessibilité territoriale
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    # =========================
-    # LIEN IMMOBILIER / CLIMAT
-    # =========================
-    st.markdown("<div class='section-title'>Pourquoi croiser climat et immobilier ?</div>", unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class="section-text">
-    Les conditions climatiques impactent durablement l’attractivité des territoires.
-    Le croisement des données immobilières et climatiques permet d’anticiper certaines
-    évolutions, de mieux comprendre les dynamiques locales et d’éclairer les choix
-    d’aménagement et d’investissement.
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("---")
-
-    # =========================
-    # CHIFFRES CLÉS (PEU NOMBREUX)
-    # =========================
-    st.markdown("<div class='section-title'>Repères nationaux</div>", unsafe_allow_html=True)
-
-    c1, c2, c3 = st.columns(3)
-
-    c1.metric("Prix moyen national", f"{prix_moy_nat:,.0f} € / m²".replace(",", " "))
-    c2.metric("Indice climatique moyen", f"{risque_moy_nat:.2f}")
-    if nb_departements:
-        c3.metric("Départements analysés", nb_departements)
-
-    # =========================
-    # COMMENT UTILISER LE DASHBOARD
-    # =========================
-    st.markdown("<div class='section-title'>Comment utiliser le tableau de bord ?</div>", unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class="section-text steps">
-        <div class="step">1. Commencer par la page <b>Vue générale</b></div>
-        <div class="step">2. Explorer les indicateurs climatiques</div>
-        <div class="step">3. Analyser les données immobilières</div>
-        <div class="step">4. Croiser les informations pour affiner l’interprétation</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-
-if __name__ == "__main__":
-    main()
+st.markdown("</div>", unsafe_allow_html=True)
