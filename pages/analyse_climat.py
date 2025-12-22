@@ -185,14 +185,24 @@ def ensure_column(df: pd.DataFrame, target: str, candidates: list[str]) -> pd.Da
 
 @st.cache_data
 def load_data():
-    base_dir = Path(__file__).resolve().parents[1]
-    df_path = base_dir / "data" / "base_finale_dashboard.csv"
+    BASE_DIR = Path(__file__).resolve().parents[1]
+    data_path = BASE_DIR / "data" / "base_finale_dashboard.csv"
+
+    if not data_path.exists():
+        st.error(f"Fichier introuvable : {data_path}")
+        st.stop()
 
     df = pd.read_csv(
-        df_path,
+        data_path,
         dtype={"code_departement": str, "code_commune": str},
-        low_memory=False,
+        low_memory=False
     )
+
+    return df
+
+
+
+
     df = normalize_columns(df)
 
     if "code_departement" in df.columns:
