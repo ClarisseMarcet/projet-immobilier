@@ -1,48 +1,67 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 from pathlib import Path
 
 st.set_page_config(page_title="Introduction", layout="wide")
 
 # =========================
-# STYLE (harmonisé avec Conclusion)
+# STYLE SIMPLE & AÉRÉ
 # =========================
 st.markdown("""
 <style>
-.section-card {
-    background-color: #ffffff;
-    border-radius: 16px;
-    padding: 26px 30px;
-    margin-top: 22px;
-    margin-bottom: 28px;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+.intro-container {
+    max-width: 1100px;
+    margin: auto;
 }
 
 .section-title {
-    font-size: 1.4rem;
-    font-weight: 750;
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-top: 30px;
     margin-bottom: 14px;
-    text-align: center;
 }
 
 .section-text {
     font-size: 1rem;
-    line-height: 1.6;
+    line-height: 1.7;
     color: #333;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 26px;
+    margin-top: 20px;
+}
+
+.box {
+    padding: 18px 22px;
+    border-left: 4px solid #2c3e50;
+    background-color: #f9f9f9;
+}
+
+.box-title {
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.steps {
+    margin-top: 10px;
+}
+
+.step {
+    margin-bottom: 8px;
 }
 </style>
 """, unsafe_allow_html=True)
 
 # =========================
-# CHARGEMENT DES DONNÉES
+# CHARGEMENT DES DONNÉES (pour chiffres clés)
 # =========================
 @st.cache_data
 def load_data():
     path = Path("data/base_finale_dashboard.csv")
-    df = pd.read_csv(path, dtype={"code_departement": str}, low_memory=False)
-
-    df["code_departement"] = df["code_departement"].astype(str).str.zfill(2)
+    df = pd.read_csv(path, low_memory=False)
 
     if "prix_m2" not in df.columns:
         df["prix_m2"] = pd.NA
@@ -52,81 +71,113 @@ def load_data():
     return df
 
 
-# =========================
-# PAGE INTRODUCTION
-# =========================
 def main():
-
-    st.title("Analyse croisée de l’immobilier et des risques climatiques en France")
-
     df = load_data()
+
+    prix_moy_nat = df["prix_m2"].mean()
+    risque_moy_nat = df["risque_climatique"].mean()
+    nb_departements = df["code_departement"].nunique() if "code_departement" in df.columns else None
+
+    st.title("Immobilier & Climat : vue d’ensemble")
+
+    st.markdown("<div class='intro-container'>", unsafe_allow_html=True)
 
     # =========================
     # TEXTE INTRODUCTIF
     # =========================
-    st.markdown("<div class='section-card'>", unsafe_allow_html=True)
-    st.markdown("<div class='section-title'>Objectif du tableau de bord</div>", unsafe_allow_html=True)
+    st.markdown("""
+    <div class="section-text">
+    Ce tableau de bord analyse les interactions entre le <b>marché immobilier</b> et les
+    <b>facteurs climatiques</b> afin de mieux comprendre les enjeux territoriaux actuels.
+
+    L’objectif est d’apporter une lecture claire et structurée des disparités géographiques,
+    en mettant en regard l’accessibilité du marché immobilier et l’exposition aux risques
+    climatiques.
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    # =========================
+    # À QUOI SERT CE TABLEAU DE BORD ?
+    # =========================
+    st.markdown("<div class='section-title'>À quoi sert ce tableau de bord ?</div>", unsafe_allow_html=True)
 
     st.markdown("""
     <div class="section-text">
-    Ce tableau de bord propose une lecture synthétique et interactive des dynamiques du
-    <b>marché immobilier</b> et de l’<b>exposition aux risques climatiques</b> en France.
+    ▸ Comprendre les tendances du marché immobilier<br>
+    ▸ Analyser les indicateurs climatiques<br>
+    ▸ Identifier les zones à risques ou à opportunités<br>
+    ▸ Aider à la prise de décision en matière d’investissement, d’aménagement et de prévention
+    </div>
+    """, unsafe_allow_html=True)
 
-    L’objectif est d’analyser les disparités territoriales en croisant des indicateurs
-    économiques et environnementaux, afin de mieux comprendre les enjeux actuels
-    auxquels font face les territoires.
+    # =========================
+    # IMMOBILIER / CLIMAT (2 BLOCS)
+    # =========================
+    st.markdown("<div class='grid'>", unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="box">
+        <div class="box-title">Analyse climatique</div>
+        ▸ Températures et aléas climatiques<br>
+        ▸ Sécheresse, inondations, feux<br>
+        ▸ Population exposée<br>
+        ▸ Pressions environnementales sur les territoires
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="box">
+        <div class="box-title">Analyse immobilière</div>
+        ▸ Prix au mètre carré<br>
+        ▸ Types de biens et transactions<br>
+        ▸ Évolution temporelle du marché<br>
+        ▸ Accessibilité territoriale
     </div>
     """, unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
 
     # =========================
-    # INDICATEURS GLOBAUX
+    # LIEN IMMOBILIER / CLIMAT
     # =========================
-    prix_nat = df["prix_m2"].mean()
-    risque_nat = df["risque_climatique"].mean()
-
-    c1, c2 = st.columns(2)
-    c1.metric("Prix moyen national au m²", f"{prix_nat:,.0f} €".replace(",", " "))
-    c2.metric("Indice moyen national de risque climatique", f"{risque_nat:.2f}")
-
-    # =========================
-    # CARTE DE FRANCE (REPÈRE VISUEL)
-    # =========================
-    st.markdown("<div class='section-card'>", unsafe_allow_html=True)
-    st.markdown("<div class='section-title'>Répartition territoriale – aperçu national</div>", unsafe_allow_html=True)
-
-    geo_url = "https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/departements.geojson"
-
-    map_df = (
-        df.groupby("code_departement", as_index=False)
-        .agg(
-            prix_m2=("prix_m2", "mean"),
-            risque=("risque_climatique", "mean")
-        )
-        .dropna()
-    )
-
-    col_l, col_c, col_r = st.columns([0.05, 4.9, 0.05])
-    with col_c:
-        fig = px.choropleth(
-            map_df,
-            geojson=geo_url,
-            locations="code_departement",
-            featureidkey="properties.code",
-            color="prix_m2",
-            color_continuous_scale="Blues",
-            labels={"prix_m2": "Prix moyen au m²"}
-        )
-        fig.update_geos(fitbounds="locations", visible=False)
-        fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
-        st.plotly_chart(fig, use_container_width=True)
+    st.markdown("<div class='section-title'>Pourquoi croiser climat et immobilier ?</div>", unsafe_allow_html=True)
 
     st.markdown("""
-    <div class="section-text" style="text-align:center; margin-top:12px;">
-    Cette carte offre une première lecture des disparités territoriales en matière de prix immobiliers.
-    Les pages suivantes permettent d’approfondir l’analyse en intégrant les risques climatiques
-    et des filtres géographiques détaillés.
+    <div class="section-text">
+    Les conditions climatiques impactent durablement l’attractivité des territoires.
+    Le croisement des données immobilières et climatiques permet d’anticiper certaines
+    évolutions, de mieux comprendre les dynamiques locales et d’éclairer les choix
+    d’aménagement et d’investissement.
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    # =========================
+    # CHIFFRES CLÉS (PEU NOMBREUX)
+    # =========================
+    st.markdown("<div class='section-title'>Repères nationaux</div>", unsafe_allow_html=True)
+
+    c1, c2, c3 = st.columns(3)
+
+    c1.metric("Prix moyen national", f"{prix_moy_nat:,.0f} € / m²".replace(",", " "))
+    c2.metric("Indice climatique moyen", f"{risque_moy_nat:.2f}")
+    if nb_departements:
+        c3.metric("Départements analysés", nb_departements)
+
+    # =========================
+    # COMMENT UTILISER LE DASHBOARD
+    # =========================
+    st.markdown("<div class='section-title'>Comment utiliser le tableau de bord ?</div>", unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="section-text steps">
+        <div class="step">1. Commencer par la page <b>Vue générale</b></div>
+        <div class="step">2. Explorer les indicateurs climatiques</div>
+        <div class="step">3. Analyser les données immobilières</div>
+        <div class="step">4. Croiser les informations pour affiner l’interprétation</div>
     </div>
     """, unsafe_allow_html=True)
 
