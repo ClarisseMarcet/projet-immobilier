@@ -6,30 +6,25 @@ from pathlib import Path
 st.set_page_config(page_title="Conclusion", layout="wide")
 
 # ======================================================
-# STYLE GLOBAL – NETTOYAGE DES BARRES BLANCHES + CARTES
+# CSS – SUPPRESSION DES 2 BARRES BLANCHES (SEULE CORRECTION UI)
 # ======================================================
 
 st.markdown("""
 <style>
-
-/* Supprime les bandes blanches Streamlit autour des tabs */
 div[data-testid="stTabs"] {
     background: transparent !important;
     padding-top: 0 !important;
     padding-bottom: 0 !important;
 }
 
-/* Supprime les blocs blancs internes */
 div[data-testid="stHorizontalBlock"] {
     background: transparent !important;
 }
 
-/* Fond global */
-.main {
-    background-color: #f6f7f9;
+section.main > div {
+    padding-top: 0 !important;
 }
 
-/* Cartes visuelles */
 .section-card {
     background-color: #ffffff;
     border-radius: 16px;
@@ -41,7 +36,7 @@ div[data-testid="stHorizontalBlock"] {
 
 .section-title {
     font-size: 1.35rem;
-    font-weight: 750;
+    font-weight: 700;
     margin-bottom: 10px;
     text-align: center;
 }
@@ -50,17 +45,6 @@ div[data-testid="stHorizontalBlock"] {
     text-align: center;
     color: #555;
     margin-bottom: 18px;
-}
-
-.badge {
-    background:#ecf0f1;
-    color:#2c3e50;
-    padding:6px 14px;
-    border-radius:18px;
-    font-weight:600;
-    font-size:0.9rem;
-    margin-right:6px;
-    display:inline-block;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -100,21 +84,9 @@ def load_data():
 
     if "zone" not in df.columns:
         df["zone"] = "Centre"
-    df["zone"] = df["zone"].replace("Autres", "Centre")
 
     if "region" not in df.columns:
-        df["region"] = pd.NA
-
-    regions = {
-        "75": "Île-de-France", "92": "Île-de-France", "93": "Île-de-France",
-        "94": "Île-de-France", "91": "Île-de-France", "77": "Île-de-France", "78": "Île-de-France",
-        "13": "Provence-Alpes-Côte d’Azur", "69": "Auvergne-Rhône-Alpes",
-        "59": "Hauts-de-France", "62": "Hauts-de-France",
-        "33": "Nouvelle-Aquitaine", "31": "Occitanie"
-    }
-
-    df["region"] = df["region"].fillna(df["code_departement"].map(regions))
-    df["region"] = df["region"].fillna("Non renseignée")
+        df["region"] = "Non renseignée"
 
     if "annee" in df.columns:
         df["annee"] = pd.to_numeric(df["annee"], errors="coerce")
@@ -133,25 +105,30 @@ def load_data():
 # ======================================================
 
 def main():
-    st.title("Conclusion – Lecture globale et interprétation")
+    st.title("Conclusion – Synthèse finale")
 
     df = load_data()
 
-    # ----------------------
-    # FILTRES
-    # ----------------------
+    # ======================
+    # FILTRES (INCHANGÉS)
+    # ======================
 
     st.sidebar.header("Filtres")
 
-    zone_sel = st.sidebar.selectbox("Zone", ["Toutes"] + sorted(df["zone"].unique()))
-    df_zone = df if zone_sel == "Toutes" else df[df["zone"] == zone_sel]
-
-    region_opts = sorted(df_zone["region"].unique())
-    region_sel = st.sidebar.selectbox("Région", ["Toutes"] + region_opts)
-    df_region = df_zone if region_sel == "Toutes" else df_zone[df_zone["region"] == region_sel]
-
-    dep_opts = sorted(df_region["nom_departement"].unique())
-    dep_sel = st.sidebar.selectbox("Département", ["Tous les départements"] + dep_opts)
+    zone_sel = st.sidebar.selectbox("Zone", ["Toutes"] + sorted(df["zone"].dropna().unique()))
+    region_sel = st.sidebar.selectbox("Région", ["Toutes"] + sorted(df["region"].dropna().unique()))
+    dep_sel = st.sidebar.selectbox(
+        "Département",
+        ["Tous les départements"] + sorted(df["nom_departement"].dropna().unique())
+    )
+    type_sel = st.sidebar.selectbox(
+        "Type de bien",
+        ["Tous"] + sorted(df["type_local"].dropna().unique())
+    )
+    year_sel = st.sidebar.selectbox(
+        "Année",
+        ["Toutes"] + sorted(df["annee"].dropna().unique())
+    )
 
     dff = df.copy()
     if zone_sel != "Toutes":
@@ -160,14 +137,14 @@ def main():
         dff = dff[dff["region"] == region_sel]
     if dep_sel != "Tous les départements":
         dff = dff[dff["nom_departement"] == dep_sel]
+    if type_sel != "Tous":
+        dff = dff[dff["type_local"] == type_sel]
+    if year_sel != "Toutes":
+        dff = dff[dff["annee"] == year_sel]
 
     if dff.empty:
         st.warning("Aucune donnée avec ces filtres.")
         return
-
-    # ----------------------
-    # INDICATEURS
-    # ----------------------
 
     prix_moy = dff["prix_m2"].mean()
     prix_nat = df["prix_m2"].mean()
@@ -177,18 +154,9 @@ def main():
     prix_stat, prix_col = classify_vs_reference(prix_moy, prix_nat)
     risque_stat, risque_col = classify_vs_reference(risque_moy, risque_nat)
 
-    k1, k2, k3, k4 = st.columns(4)
-    k1.metric("Prix local", f"{prix_moy:,.0f} €".replace(",", " "))
-    k2.metric("Prix France", f"{prix_nat:,.0f} €".replace(",", " "))
-    k3.metric("Risque local", f"{risque_moy:.2f}")
-    k4.metric("Risque France", f"{risque_nat:.2f}")
-
-    # ----------------------
-    # TABS
-    # ----------------------
-
     geo_url = "https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/departements.geojson"
-    tab_immo, tab_clim = st.tabs(["Analyse immobilière", "Analyse climatique"])
+
+    tab_immo, tab_clim = st.tabs(["Synthèse immobilière", "Synthèse climatique"])
 
     # ======================
     # IMMOBILIER
@@ -197,11 +165,13 @@ def main():
     with tab_immo:
         st.markdown("<div class='section-card'>", unsafe_allow_html=True)
         st.markdown("<div class='section-title'>Analyse immobilière</div>", unsafe_allow_html=True)
-        st.markdown("<div class='section-subtitle'>Prix au m² par département</div>", unsafe_allow_html=True)
 
         _, col, _ = st.columns([0.1, 5, 0.1])
         with col:
-            map_df = dff.groupby(["code_departement", "nom_departement"], as_index=False)["prix_m2"].mean()
+            map_df = dff.groupby(
+                ["code_departement", "nom_departement"], as_index=False
+            )["prix_m2"].mean()
+
             fig = px.choropleth(
                 map_df,
                 geojson=geo_url,
@@ -217,10 +187,10 @@ def main():
 
         st.markdown(
             f"""
-            Le marché immobilier est **{highlight(
+            Le territoire étudié est **{highlight(
                 "moins cher" if prix_stat=="moins" else "plus cher" if prix_stat=="plus" else "dans la moyenne",
                 prix_col
-            )}** par rapport à la France.
+            )}** que la moyenne nationale en termes de prix immobiliers.
             """,
             unsafe_allow_html=True
         )
@@ -233,11 +203,13 @@ def main():
     with tab_clim:
         st.markdown("<div class='section-card'>", unsafe_allow_html=True)
         st.markdown("<div class='section-title'>Analyse climatique</div>", unsafe_allow_html=True)
-        st.markdown("<div class='section-subtitle'>Exposition aux risques climatiques</div>", unsafe_allow_html=True)
 
         _, col, _ = st.columns([0.1, 5, 0.1])
         with col:
-            map_df = dff.groupby(["code_departement", "nom_departement"], as_index=False)["risque_climatique"].mean()
+            map_df = dff.groupby(
+                ["code_departement", "nom_departement"], as_index=False
+            )["risque_climatique"].mean()
+
             fig = px.choropleth(
                 map_df,
                 geojson=geo_url,
@@ -256,7 +228,7 @@ def main():
             Le territoire est **{highlight(
                 "moins exposé" if risque_stat=="moins" else "plus exposé" if risque_stat=="plus" else "dans la moyenne",
                 risque_col
-            )}** aux risques climatiques que la France.
+            )}** aux risques climatiques par rapport à la France.
             """,
             unsafe_allow_html=True
         )
