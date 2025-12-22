@@ -6,22 +6,20 @@ from pathlib import Path
 st.set_page_config(page_title="Conclusion", layout="wide")
 
 # =========================
-# STYLE GLOBAL (BARRES BLANCHES SUPPRIMÉES)
+# STYLE GLOBAL
 # =========================
 
 st.markdown("""
 <style>
 
-/* SUPPRESSION DES DEUX BANDES BLANCHES DES TABS */
+/* SUPPRESSION DES 2 BARRES BLANCHES STREAMLIT */
 div[data-testid="stTabs"] {
     background: transparent !important;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
 }
 
 div[data-testid="stTabs"] > div {
-    border-bottom: none !important;
-}
-
-button[role="tab"] {
     border-bottom: none !important;
 }
 
@@ -29,11 +27,15 @@ div[data-testid="stTabs"] [data-baseweb="tab-highlight"] {
     display: none !important;
 }
 
-section.main > div {
+button[role="tab"] {
+    border-bottom: none !important;
+}
+
+section.main > div:first-child {
     padding-top: 0rem !important;
 }
 
-/* CARTES VISUELLES */
+/* STYLE EXISTANT — INCHANGÉ */
 .section-card {
     background-color: #ffffff;
     border-radius: 16px;
@@ -84,10 +86,6 @@ def classify_vs_reference(value, ref, tol=0.02):
     return ("moyenne", "#f39c12")
 
 
-# =========================
-# CHARGEMENT DES DONNÉES
-# =========================
-
 @st.cache_data
 def load_data():
     base_dir = Path(__file__).resolve().parents[1]
@@ -95,9 +93,10 @@ def load_data():
 
     df = pd.read_csv(path, dtype={"code_departement": str}, low_memory=False)
 
-    df["code_departement"] = df["code_departement"].astype(str).str.strip().str.upper()
-    mask_corse = df["code_departement"].isin(["2A", "2B"])
-    df.loc[~mask_corse, "code_departement"] = df.loc[~mask_corse, "code_departement"].str.zfill(2)
+    if "code_departement" in df.columns:
+        df["code_departement"] = df["code_departement"].astype(str).str.upper()
+        mask_corse = df["code_departement"].isin(["2A", "2B"])
+        df.loc[~mask_corse, "code_departement"] = df.loc[~mask_corse, "code_departement"].str.zfill(2)
 
     if "nom_departement" not in df.columns:
         df["nom_departement"] = df["code_departement"]
@@ -120,22 +119,15 @@ def load_data():
     return df
 
 
-# =========================
-# PAGE PRINCIPALE
-# =========================
-
 def main():
     st.title("Conclusion – Lecture globale et interprétation")
     df = load_data()
 
-    st.sidebar.header("Filtres")
+    st.sidebar.header("Filtres géographiques")
 
     zone_sel = st.sidebar.selectbox("Zone", ["Toutes"] + sorted(df["zone"].dropna().unique()))
     region_sel = st.sidebar.selectbox("Région", ["Toutes"] + sorted(df["region"].dropna().unique()))
-    dep_sel = st.sidebar.selectbox(
-        "Département",
-        ["Tous les départements"] + sorted(df["nom_departement"].dropna().unique())
-    )
+    dep_sel = st.sidebar.selectbox("Département", ["Tous les départements"] + sorted(df["nom_departement"].dropna().unique()))
     type_sel = st.sidebar.selectbox("Type de bien", ["Tous"] + sorted(df["type_local"].dropna().unique()))
     year_sel = st.sidebar.selectbox("Année", ["Toutes"] + sorted(df["annee"].dropna().unique()))
 
@@ -155,31 +147,19 @@ def main():
         st.warning("Aucune donnée disponible avec ces filtres.")
         return
 
-    prix_moy = dff["prix_m2"].mean()
-    prix_nat = df["prix_m2"].mean()
-    risque_moy = dff["risque_climatique"].mean()
-    risque_nat = df["risque_climatique"].mean()
-
-    prix_status, prix_color = classify_vs_reference(prix_moy, prix_nat)
-    risque_status, risque_color = classify_vs_reference(risque_moy, risque_nat)
-
     geo_url = "https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/departements.geojson"
-
     tab_immo, tab_clim = st.tabs(["Synthèse immobilière", "Synthèse climatique"])
 
     # =========================
-    # IMMOBILIER (CARTE PLUS LARGE)
+    # IMMOBILIER (CARTE ÉLARGIE)
     # =========================
     with tab_immo:
         st.markdown("<div class='section-card'>", unsafe_allow_html=True)
         st.markdown("<div class='section-title'>Analyse immobilière</div>", unsafe_allow_html=True)
 
-        col_l, col_c, col_r = st.columns([0.2, 4.6, 0.2])
+        col_l, col_c, col_r = st.columns([0.15, 4.7, 0.15])
         with col_c:
-            map_df = dff.groupby(
-                ["code_departement", "nom_departement"], as_index=False
-            )["prix_m2"].mean()
-
+            map_df = dff.groupby(["code_departement", "nom_departement"], as_index=False)["prix_m2"].mean().dropna()
             fig = px.choropleth(
                 map_df,
                 geojson=geo_url,
@@ -190,24 +170,21 @@ def main():
                 hover_name="nom_departement"
             )
             fig.update_geos(fitbounds="locations", visible=False)
-            fig.update_layout(height=620, margin=dict(l=0, r=0, t=0, b=0))
+            fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
             st.plotly_chart(fig, use_container_width=True)
 
         st.markdown("</div>", unsafe_allow_html=True)
 
     # =========================
-    # CLIMAT (CARTE PLUS LARGE)
+    # CLIMAT (CARTE ÉLARGIE)
     # =========================
     with tab_clim:
         st.markdown("<div class='section-card'>", unsafe_allow_html=True)
         st.markdown("<div class='section-title'>Analyse climatique</div>", unsafe_allow_html=True)
 
-        col_l, col_c, col_r = st.columns([0.2, 4.6, 0.2])
+        col_l, col_c, col_r = st.columns([0.15, 4.7, 0.15])
         with col_c:
-            map_df = dff.groupby(
-                ["code_departement", "nom_departement"], as_index=False
-            )["risque_climatique"].mean()
-
+            map_df = dff.groupby(["code_departement", "nom_departement"], as_index=False)["risque_climatique"].mean().dropna()
             fig = px.choropleth(
                 map_df,
                 geojson=geo_url,
@@ -218,7 +195,7 @@ def main():
                 hover_name="nom_departement"
             )
             fig.update_geos(fitbounds="locations", visible=False)
-            fig.update_layout(height=620, margin=dict(l=0, r=0, t=0, b=0))
+            fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
             st.plotly_chart(fig, use_container_width=True)
 
         st.markdown("</div>", unsafe_allow_html=True)
