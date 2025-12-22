@@ -3,16 +3,22 @@ import pandas as pd
 import plotly.express as px
 from pathlib import Path
 
-@st.cache_data
+
 def load_data():
-    base_dir = Path(__file__).resolve().parents[1]
-    data_path = base_dir / "data" / "base_finale_dashboard.csv"
+    data_path = Path("data/base_finale_dashboard.csv")
+
+    if not data_path.exists():
+        raise FileNotFoundError(f"Fichier introuvable : {data_path}")
 
     df = pd.read_csv(
         data_path,
         dtype={"code_departement": str, "code_commune": str},
         low_memory=False
     )
+
+    return df
+
+
 
     df["code_departement"] = df["code_departement"].astype(str).str.zfill(2)
     df["code_commune"] = df["code_commune"].astype(str).str.zfill(5)
