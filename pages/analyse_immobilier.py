@@ -100,18 +100,21 @@ def pick_count_col(df: pd.DataFrame) -> str:
 
 @st.cache_data
 def load_data():
-    base_dir = Path(__file__).resolve().parents[1]
-    data_path = base_dir / "data" / "base_finale_dashboard.csv"
+    BASE_DIR = Path(__file__).resolve().parents[1]
+    data_path = BASE_DIR / "data" / "base_finale_dashboard.csv"
 
-    # fallback si le script est lancé directement depuis /pages
     if not data_path.exists():
-        data_path = Path(__file__).resolve().parent / "data" / "base_finale_dashboard.csv"
+        st.error(f"Fichier introuvable : {data_path}")
+        st.stop()
 
     df = pd.read_csv(
         data_path,
         dtype={"code_departement": str, "code_commune": str},
         low_memory=False
     )
+
+    return df
+
 
     if "code_departement" in df.columns:
         df["code_departement"] = df["code_departement"].astype(str).str.zfill(2)
