@@ -182,7 +182,6 @@ def ensure_column(df: pd.DataFrame, target: str, candidates: list[str]) -> pd.Da
 
 # CHARGEMENT DES DONNÉES
 
-
 @st.cache_data
 def load_data():
     BASE_DIR = Path(__file__).resolve().parents[1]
@@ -198,10 +197,8 @@ def load_data():
         low_memory=False
     )
 
-    return df
-
-
-
+    # CORRECTION PRINCIPALE : on ne retourne PAS ici.
+    # On nettoie/renomme/crée les colonnes, puis seulement return df à la fin.
 
     df = normalize_columns(df)
 
@@ -288,9 +285,7 @@ def main():
 
     total_pop = dep_agg["population_exposee"].sum()
 
-    
     # FILTRES
-    
     st.sidebar.header("Filtres – Exposition de la population")
 
     zones = ["Toutes"] + sorted(dep_agg["zone5"].dropna().unique())
@@ -335,9 +330,7 @@ def main():
         st.warning("Aucune donnée après filtre. Modifie les filtres pour voir des résultats.")
         return
 
-    
     # 4 PARTIES (TABS)
-    
     tab1, tab2, tab3, tab4 = st.tabs([
         "Exposition globale",
         "Comparaisons territoriales",
@@ -345,9 +338,7 @@ def main():
         "Évolutions & prévisions"
     ])
 
-    
     # Tab 1 Exposition globale
-    
     with tab1:
         st.subheader("Indicateurs clés")
 
@@ -452,9 +443,7 @@ def main():
 
             st.plotly_chart(fig_zone, use_container_width=True)
 
-    
     # Tab Comparaison territoriale
-    
     with tab2:
         st.subheader("Top 10 régions les plus exposées")
 
@@ -553,9 +542,7 @@ def main():
         else:
             st.info("Colonnes insuffisantes pour afficher le top communes.")
 
-    
     # Tab 3  Analyse et risque
-    
     with tab3:
         st.subheader("Analyse multi-risques par département")
 
@@ -675,9 +662,7 @@ def main():
         else:
             st.info("Pas assez de colonnes risques pour afficher les profils par zone.")
 
-    
     # Tab 4 Evolution et prévision.
-    
     with tab4:
         if risk_col is None:
             st.info("Aucun indicateur de risque disponible pour les évolutions.")
@@ -806,10 +791,7 @@ def main():
         else:
             st.info("Prévision du risque non disponible (sklearn absent ou données insuffisantes).")
 
-
-    
     # Synthèse, tableau détaillé
-    
     st.markdown("---")
     st.subheader("Synthèse automatique (basée sur les données)")
 
