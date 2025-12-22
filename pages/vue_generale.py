@@ -9,51 +9,67 @@ st.set_page_config(page_title="Introduction", layout="wide")
 # =========================
 st.markdown("""
 <style>
+body {
+    color: #000000;
+}
+
 .intro-container {
     max-width: 1100px;
     margin: auto;
 }
 
 .section-title {
-    font-size: 1.6rem;
-    font-weight: 700;
-    margin-top: 30px;
-    margin-bottom: 14px;
+    font-size: 1.7rem;
+    font-weight: 800;
+    margin-top: 34px;
+    margin-bottom: 16px;
+    color: #000000;
 }
 
 .section-text {
-    font-size: 1rem;
-    line-height: 1.7;
-    color: #333;
+    font-size: 1.05rem;
+    line-height: 1.75;
+    color: #000000;
 }
 
 .grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 26px;
-    margin-top: 20px;
+    gap: 30px;
+    margin-top: 24px;
 }
 
 .box {
-    padding: 18px 22px;
-    border-left: 4px solid #2c3e50;
-    background-color: #f9f9f9;
+    padding: 20px 24px;
+    border: 2px solid #f1c40f; /* jaune */
+    background-color: transparent;
 }
 
 .box-title {
-    font-weight: 700;
-    margin-bottom: 8px;
+    font-weight: 800;
+    margin-bottom: 10px;
+    color: #000000;
 }
 
 .steps {
-    margin-top: 10px;
+    margin-top: 12px;
 }
 
 .step {
-    margin-bottom: 8px;
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: #000000;
+}
+
+/* Ligne de séparation */
+hr {
+    border: none;
+    border-top: 2px solid #000000;
+    margin: 32px 0;
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 # =========================
 # CHARGEMENT DES DONNÉES (pour chiffres clés)
