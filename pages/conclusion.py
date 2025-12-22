@@ -257,7 +257,8 @@ def main():
         st.markdown("<div class='section-title'>Analyse immobilière</div>", unsafe_allow_html=True)
         st.markdown("<div class='section-subtitle'>Carte des prix au m² et lecture par rapport à la France</div>", unsafe_allow_html=True)
 
-        col_l, col_c, col_r = st.columns([1, 3, 1])
+        col_l, col_c, col_r = st.columns([0.5, 5, 0.5])
+
         with col_c:
             map_df = (
                 dff.groupby(["code_departement", "nom_departement"], as_index=False)
@@ -314,7 +315,8 @@ def main():
         st.markdown("<div class='section-title'>Analyse climatique</div>", unsafe_allow_html=True)
         st.markdown("<div class='section-subtitle'>Carte du risque climatique et lecture par rapport à la France</div>", unsafe_allow_html=True)
 
-        col_l, col_c, col_r = st.columns([1, 3, 1])
+        col_l, col_c, col_r = st.columns([0.5, 5, 0.5])
+
         with col_c:
             map_df = (
                 dff.groupby(["code_departement", "nom_departement"], as_index=False)
