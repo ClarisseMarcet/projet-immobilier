@@ -6,16 +6,14 @@ from reportlab.lib.pagesizes import A4
 import pandas as pd
 from pptx import Presentation
 
-# ==========================================================
+
 # CONFIG STREAMLIT
-# ==========================================================
+
 st.set_page_config(
     page_title="Observatoire Immobilier & Risques Climatiques",
     layout="wide"
 )
 
-# ==========================================================
-# MODE SOMBRE / MODE CLAIR
 
 
 
