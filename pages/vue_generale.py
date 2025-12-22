@@ -6,48 +6,54 @@ st.set_page_config(
 )
 
 # =========================
-# STYLE VISUEL (léger, attractif)
+# STYLE (corrigé, lisible, sans barres)
 # =========================
 
 st.markdown("""
 <style>
+
+/* Centrage général */
 .center {
     text-align: center;
 }
 
-.section {
-    margin-top: 30px;
-    margin-bottom: 30px;
-}
-
+/* Cartes */
 .card {
-    padding: 20px 24px;
-    border-radius: 14px;
-    border: 2px solid #dcdcdc;
+    padding: 24px 26px;
+    border-radius: 16px;
+    border: 3px solid;
     height: 100%;
 }
 
+/* IMPORTANT : forcer la couleur du texte (thème sombre Streamlit) */
+.card, .card * {
+    color: #000000;
+}
+
+/* Carte climat */
 .card-climat {
-    background-color: #f0f6ff;
-    border-color: #4a90e2;
+    background-color: #e3f0ff;
+    border-color: #2f6fd6;
 }
 
+/* Carte immobilier */
 .card-immo {
-    background-color: #f6f9f0;
-    border-color: #7cb342;
+    background-color: #eef6e6;
+    border-color: #558b2f;
 }
-
 
 .card-title {
-    font-size: 1.2rem;
-    font-weight: 700;
-    margin-bottom: 10px;
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin-bottom: 12px;
 }
 
-.hr {
-    border-top: 2px solid #000000;
-    margin: 30px 0;
+/* Espacement vertical */
+.section {
+    margin-top: 32px;
+    margin-bottom: 32px;
 }
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -55,7 +61,10 @@ st.markdown("""
 # TITRE + INTRO
 # =========================
 
-st.markdown("<h1 class='center'>Immobilier & Climat : Vue d’ensemble</h1>", unsafe_allow_html=True)
+st.markdown(
+    "<h1 class='center'>Immobilier & Climat : Vue d’ensemble</h1>",
+    unsafe_allow_html=True
+)
 
 st.markdown(
     "<p class='center'>"
@@ -65,13 +74,16 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.markdown("<div class='hr'></div>", unsafe_allow_html=True)
-
 # =========================
 # À QUOI SERT LE DASHBOARD (CENTRÉ)
 # =========================
 
-st.markdown("<h3 class='center'>À quoi sert ce tableau de bord ?</h3>", unsafe_allow_html=True)
+st.markdown("<div class='section'></div>", unsafe_allow_html=True)
+
+st.markdown(
+    "<h3 class='center'>À quoi sert ce tableau de bord ?</h3>",
+    unsafe_allow_html=True
+)
 
 st.markdown("""
 <p class='center'>Comprendre les tendances du marché immobilier</p>
@@ -80,11 +92,11 @@ st.markdown("""
 <p class='center'>Aider à la prise de décision (investissement, aménagement, prévention)</p>
 """, unsafe_allow_html=True)
 
-st.markdown("<div class='hr'></div>", unsafe_allow_html=True)
+# =========================
+# DEUX CARTES ANALYTIQUES
+# =========================
 
-# =========================
-# DEUX ANALYSES ENCADRÉES
-# =========================
+st.markdown("<div class='section'></div>", unsafe_allow_html=True)
 
 col1, col2 = st.columns(2)
 
@@ -116,29 +128,36 @@ with col2:
     </div>
     """, unsafe_allow_html=True)
 
-st.markdown("<div class='hr'></div>", unsafe_allow_html=True)
-
 # =========================
 # POURQUOI CROISER
 # =========================
 
-st.markdown("<h3 class='center'>Pourquoi croiser climat et immobilier ?</h3>", unsafe_allow_html=True)
+st.markdown("<div class='section'></div>", unsafe_allow_html=True)
+
+st.markdown(
+    "<h3 class='center'>Pourquoi croiser climat et immobilier ?</h3>",
+    unsafe_allow_html=True
+)
 
 st.markdown(
     "<p class='center'>"
     "Les conditions climatiques influencent la valeur des biens et l’attractivité des territoires. "
-    "Une analyse croisée permet d’anticiper les évolutions futures et de mieux comprendre les dynamiques locales."
+    "Une analyse croisée permet d’anticiper les évolutions futures et de mieux comprendre "
+    "les dynamiques territoriales."
     "</p>",
     unsafe_allow_html=True
 )
-
-st.markdown("<div class='hr'></div>", unsafe_allow_html=True)
 
 # =========================
 # COMMENT UTILISER
 # =========================
 
-st.markdown("<h3 class='center'>Comment utiliser le tableau de bord ?</h3>", unsafe_allow_html=True)
+st.markdown("<div class='section'></div>", unsafe_allow_html=True)
+
+st.markdown(
+    "<h3 class='center'>Comment utiliser le tableau de bord ?</h3>",
+    unsafe_allow_html=True
+)
 
 st.markdown("""
 <p class='center'>1. Commencez par la vue d’ensemble</p>
