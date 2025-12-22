@@ -7,7 +7,7 @@ st.set_page_config(
 
 # =========================
 # STYLE (noir / jaune, lisible)
-# =========================
+# ========================
 
 st.markdown("""
 <style>
