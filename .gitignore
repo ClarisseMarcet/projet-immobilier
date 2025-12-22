@@ -3,5 +3,12 @@ __pycache__/
 .env
 .vscode/
 .ipynb_checkpoints/
-data/base_finale/
+
+# Ignorer tous les CSV
 *.csv
+
+# SAUF celui nécessaire au déploiement
+!data/base_finale_dashboard.csv
+
+# Ignorer les bases brutes
+data/base_finale/
