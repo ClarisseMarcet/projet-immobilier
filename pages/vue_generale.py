@@ -3,124 +3,134 @@ import pandas as pd
 import plotly.express as px
 from pathlib import Path
 
+st.set_page_config(page_title="Introduction", layout="wide")
 
+# =========================
+# STYLE (harmonisé avec Conclusion)
+# =========================
+st.markdown("""
+<style>
+.section-card {
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 26px 30px;
+    margin-top: 22px;
+    margin-bottom: 28px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+}
+
+.section-title {
+    font-size: 1.4rem;
+    font-weight: 750;
+    margin-bottom: 14px;
+    text-align: center;
+}
+
+.section-text {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #333;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# =========================
+# CHARGEMENT DES DONNÉES
+# =========================
+@st.cache_data
 def load_data():
-    data_path = Path("data/base_finale_dashboard.csv")
-
-    if not data_path.exists():
-        raise FileNotFoundError(f"Fichier introuvable : {data_path}")
-
-    df = pd.read_csv(
-        data_path,
-        dtype={"code_departement": str, "code_commune": str},
-        low_memory=False
-    )
+    path = Path("data/base_finale_dashboard.csv")
+    df = pd.read_csv(path, dtype={"code_departement": str}, low_memory=False)
 
     df["code_departement"] = df["code_departement"].astype(str).str.zfill(2)
-    df["code_commune"] = df["code_commune"].astype(str).str.zfill(5)
 
-    def map_zone(dep):
-        try:
-            cd = int(dep)
-        except:
-            return "Autres"
-
-        if cd in {59, 62, 80, 2, 60, 76}:
-            return "Nord"
-        if cd in {57, 54, 55, 88, 67, 68, 52, 21, 25, 39, 70}:
-            return "Est"
-        if cd in {29, 22, 56, 35, 44, 85, 79, 17, 50, 14, 53}:
-            return "Ouest"
-        if cd in {
-            13, 83, 6, 34, 30, 66, 31, 64, 40, 47, 11, 81, 82,
-            46, 48, 12, 84, 4, 5
-        }:
-            return "Sud"
-        return "Autres"
-
-    df["zone"] = df["code_departement"].apply(map_zone)
-
-    if "nom_departement" not in df.columns:
-        df["nom_departement"] = df["code_departement"]
+    if "prix_m2" not in df.columns:
+        df["prix_m2"] = pd.NA
+    if "risque_climatique" not in df.columns:
+        df["risque_climatique"] = pd.NA
 
     return df
 
 
+# =========================
+# PAGE INTRODUCTION
+# =========================
 def main():
-    st.title("Vue générale – Immobilier et risques climatiques")
+
+    st.title("Analyse croisée de l’immobilier et des risques climatiques en France")
 
     df = load_data()
 
-    st.sidebar.header("Filtres")
+    # =========================
+    # TEXTE INTRODUCTIF
+    # =========================
+    st.markdown("<div class='section-card'>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>Objectif du tableau de bord</div>", unsafe_allow_html=True)
 
-    annees = sorted(df["annee"].dropna().unique())
-    annee = st.sidebar.selectbox("Année", annees, index=len(annees) - 1)
+    st.markdown("""
+    <div class="section-text">
+    Ce tableau de bord propose une lecture synthétique et interactive des dynamiques du
+    <b>marché immobilier</b> et de l’<b>exposition aux risques climatiques</b> en France.
 
-    zones = ["Toutes"] + sorted(df["zone"].dropna().unique())
-    zone = st.sidebar.selectbox("Zone", zones)
+    L’objectif est d’analyser les disparités territoriales en croisant des indicateurs
+    économiques et environnementaux, afin de mieux comprendre les enjeux actuels
+    auxquels font face les territoires.
+    </div>
+    """, unsafe_allow_html=True)
 
-    if zone != "Toutes":
-        deps = df[df["zone"] == zone]["nom_departement"].dropna().unique()
-    else:
-        deps = df["nom_departement"].dropna().unique()
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    departements = ["Tous"] + sorted(deps)
-    departement = st.sidebar.selectbox("Département", departements)
+    # =========================
+    # INDICATEURS GLOBAUX
+    # =========================
+    prix_nat = df["prix_m2"].mean()
+    risque_nat = df["risque_climatique"].mean()
 
-    types_bien = ["Tous"] + sorted(df["type_local"].dropna().unique())
-    type_bien = st.sidebar.selectbox("Type de bien", types_bien)
+    c1, c2 = st.columns(2)
+    c1.metric("Prix moyen national au m²", f"{prix_nat:,.0f} €".replace(",", " "))
+    c2.metric("Indice moyen national de risque climatique", f"{risque_nat:.2f}")
 
-    RISK_MAP = {
-        "Global (pondéré)": "risque_climatique",
-        "Chaleur": "R_ATM_2016",
-        "Sécheresse": "R_MVT_2016",
-        "Inondation": "R_INO_2016",
-        "Feux": "R_FEU_2016",
-    }
-    risque_label = st.sidebar.selectbox("Type de risque", list(RISK_MAP.keys()))
-    col_risque = RISK_MAP[risque_label]
+    # =========================
+    # CARTE DE FRANCE (REPÈRE VISUEL)
+    # =========================
+    st.markdown("<div class='section-card'>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>Répartition territoriale – aperçu national</div>", unsafe_allow_html=True)
 
-    dff = df[df["annee"] == annee].copy()
+    geo_url = "https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/departements.geojson"
 
-    if zone != "Toutes":
-        dff = dff[dff["zone"] == zone]
-    if departement != "Tous":
-        dff = dff[dff["nom_departement"] == departement]
-    if type_bien != "Tous":
-        dff = dff[dff["type_local"] == type_bien]
+    map_df = (
+        df.groupby("code_departement", as_index=False)
+        .agg(
+            prix_m2=("prix_m2", "mean"),
+            risque=("risque_climatique", "mean")
+        )
+        .dropna()
+    )
 
-    if dff.empty:
-        st.warning("Aucune donnée pour ces filtres.")
-        return
+    col_l, col_c, col_r = st.columns([0.05, 4.9, 0.05])
+    with col_c:
+        fig = px.choropleth(
+            map_df,
+            geojson=geo_url,
+            locations="code_departement",
+            featureidkey="properties.code",
+            color="prix_m2",
+            color_continuous_scale="Blues",
+            labels={"prix_m2": "Prix moyen au m²"}
+        )
+        fig.update_geos(fitbounds="locations", visible=False)
+        fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
+        st.plotly_chart(fig, use_container_width=True)
 
-    st.subheader("Indicateurs clés")
+    st.markdown("""
+    <div class="section-text" style="text-align:center; margin-top:12px;">
+    Cette carte offre une première lecture des disparités territoriales en matière de prix immobiliers.
+    Les pages suivantes permettent d’approfondir l’analyse en intégrant les risques climatiques
+    et des filtres géographiques détaillés.
+    </div>
+    """, unsafe_allow_html=True)
 
-    k1, k2, k3, k4 = st.columns(4)
-
-    prix_moy = dff["prix_m2"].mean()
-    k1.metric("Prix moyen au m²", f"{prix_moy:,.0f} €")
-
-    if "PMUN_2014" in dff.columns:
-        pop_exposee = int(dff["PMUN_2014"].sum())
-        k2.metric("Population exposée", f"{pop_exposee:,}".replace(",", " "))
-    else:
-        k2.metric("Population exposée", "Non disponible")
-
-    if "risque_climatique" in dff.columns:
-        dep_risk = dff.groupby("nom_departement")["risque_climatique"].mean()
-        k3.metric("Département le plus risqué", dep_risk.idxmax())
-    else:
-        k3.metric("Département le plus risqué", "Non disponible")
-
-    if col_risque in dff.columns:
-        k4.metric("Indice moyen", round(dff[col_risque].mean(), 3))
-    else:
-        k4.metric("Indice moyen", "Non disponible")
-
-    st.markdown("---")
-
-    st.subheader("Aperçu des données")
-    st.dataframe(dff.head(200))
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 if __name__ == "__main__":
