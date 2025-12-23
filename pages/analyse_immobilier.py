@@ -9,9 +9,8 @@ pio.templates.default = "plotly_white"
 st.set_page_config(page_title="Analyse immobilière", layout="wide")
 
 
-# ---------------------------
+
 # FONCTIONS MAPPING ZONES
-# ---------------------------
 
 def map_region(dep: str) -> str:
     if dep is None:
@@ -77,13 +76,7 @@ def map_zone_fiscale(dep: str) -> str:
         "81", "82", "83", "84", "85", "86", "87", "88", "89", "90"
     }
 
-    if d in zone_A:
-        return "Zone A"
-    if d in zone_B1:
-        return "Zone B1"
-    if d in zone_B2:
-        return "Zone B2"
-    return "Zone C"
+
 
 
 def pick_count_col(df: pd.DataFrame) -> str:
@@ -93,9 +86,9 @@ def pick_count_col(df: pd.DataFrame) -> str:
     return df.columns[0]
 
 
-# ---------------------------
+
 # CHARGEMENT DES DONNÉES
-# ---------------------------
+
 
 @st.cache_data
 def load_data():
@@ -170,9 +163,8 @@ def load_data():
     return df
 
 
-# ---------------------------
+
 # APP
-# ---------------------------
 
 def main():
     st.markdown("""
@@ -257,9 +249,10 @@ def main():
             value=(int(min_p), int(min_p + (max_p - min_p) * 0.7))
         )
 
-    # ---------------------------
+
+    
     # APPLICATION DES FILTRES
-    # ---------------------------
+    
     dff = df.copy()
 
     if annee_sel != "Toutes" and "annee" in dff.columns:
@@ -494,9 +487,10 @@ def main():
             else:
                 st.info("Variables surface ou prix manquantes pour le scatter.")
 
-    # ---------------------------
-    # TAB 2 – COMPARAISONS DÉPARTEMENTS
-    # ---------------------------
+
+    
+    ################### TAB 2 – COMPARAISONS DÉPARTEMENTS
+    
     with tab2:
         st.subheader("Comparaison inter-départements")
 
@@ -624,9 +618,10 @@ def main():
                 figpb.update_traces(texttemplate="%{text:,.0f} €", textposition="outside")
                 st.plotly_chart(figpb, use_container_width=True)
 
-    # ---------------------------
-    # TAB 3 – TYPOLOGIE DES BIENS
-    # ---------------------------
+    
+    
+    ################ TAB 3 – TYPOLOGIE DES BIENS
+    
     with tab3:
         st.subheader("Répartition par type de bien")
 
@@ -680,9 +675,9 @@ def main():
         else:
             st.info("Variables 'type_local' ou 'prix_m2' manquantes pour cette analyse.")
 
-    # ---------------------------
+    
     # TAB 4 – TABLEAUX & DONNÉES
-    # ---------------------------
+    
     with tab4:
         st.subheader("Classement des communes selon le prix au m²")
 
