@@ -87,7 +87,7 @@ st.markdown(
 
 st.markdown("""
 <p class='center'>Comprendre les tendances du marché immobilier</p>
-<p class='center'>Évaluer les risques climatiques</p>
+<p class='center'>Evaluer les risques climatiques</p>
 <p class='center'>Identifier les zones à enjeux ou à opportunités</p>
 <p class='center'>Aider à la prise de décision (investissement, aménagement, prévention)</p>
 """, unsafe_allow_html=True)
@@ -104,11 +104,11 @@ with col1:
     st.markdown("""
     <div class="card card-climat">
         <div class="card-title">Analyse climatique</div>
-        Étudiez les indicateurs climatiques :
+        Etudiez les indicateurs climatiques :
         <ul>
             <li>Températures</li>
             <li>Précipitations</li>
-            <li>Événements extrêmes</li>
+            <li>Evénements extrêmes</li>
             <li>Niveaux de risque</li>
         </ul>
     </div>
