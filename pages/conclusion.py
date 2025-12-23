@@ -5,9 +5,9 @@ from pathlib import Path
 
 st.set_page_config(page_title="Conclusion", layout="wide")
 
-# =========================
+
 # STYLE GLOBAL
-# =========================
+
 
 st.markdown("""
 <style>
@@ -68,9 +68,9 @@ def classify_vs_reference(value: float, ref: float, tol: float = 0.02):
     return ("moyenne", "#f39c12")
 
 
-# =========================
+
 # CHARGEMENT DES DONNÉES
-# =========================
+
 
 @st.cache_data
 def load_data():
@@ -106,9 +106,9 @@ def load_data():
     if "risque_climatique" not in df.columns:
         df["risque_climatique"] = pd.NA
 
-    # =========================
+    
     # REMPLISSAGE DES RÉGIONS (par code département)
-    # =========================
+  
     regions_par_departement = {
         # Auvergne-Rhône-Alpes
         "01": "Auvergne-Rhône-Alpes", "03": "Auvergne-Rhône-Alpes", "07": "Auvergne-Rhône-Alpes",
@@ -180,9 +180,8 @@ def load_data():
     return df
 
 
-# =========================
+
 # PAGE PRINCIPALE
-# =========================
 
 def main():
     st.title("Conclusion – Lecture globale et interprétation")
@@ -249,9 +248,9 @@ def main():
     geo_url = "https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/departements.geojson"
     tab_immo, tab_clim = st.tabs(["Synthèse immobilière", "Synthèse climatique"])
 
-    # =========================
+
+    
     # ONGLET IMMOBILIER
-    # =========================
     with tab_immo:
         st.markdown("<div class='section-card'>", unsafe_allow_html=True)
         st.markdown("<div class='section-title'>Analyse immobilière</div>", unsafe_allow_html=True)
@@ -307,9 +306,9 @@ def main():
 
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # =========================
+    
     # ONGLET CLIMAT
-    # =========================
+
     with tab_clim:
         st.markdown("<div class='section-card'>", unsafe_allow_html=True)
         st.markdown("<div class='section-title'>Analyse climatique</div>", unsafe_allow_html=True)
@@ -381,8 +380,8 @@ def main():
 
         Cette synthèse met en évidence deux lectures complémentaires :
         <ul>
-            <li>Une lecture **immobilière** : le territoire est <b>{highlight("moins cher" if prix_status=="moins" else ("plus cher" if prix_status=="plus" else "dans la moyenne"), prix_color)}</b> par rapport à la moyenne nationale.</li>
-            <li>Une lecture **climatique** : le territoire est <b>{highlight("moins exposé" if risque_status=="moins" else ("plus exposé" if risque_status=="plus" else "dans la moyenne"), risque_color)}</b> par rapport à la France.</li>
+            <li>Une lecture immobilière : le territoire est <b>{highlight("moins cher" if prix_status=="moins" else ("plus cher" if prix_status=="plus" else "dans la moyenne"), prix_color)}</b> par rapport à la moyenne nationale.</li>
+            <li>Une lecture climatique : le territoire est <b>{highlight("moins exposé" if risque_status=="moins" else ("plus exposé" if risque_status=="plus" else "dans la moyenne"), risque_color)}</b> par rapport à la France.</li>
         </ul>
 
         L’objectif de cette page est de fournir une conclusion lisible :  
